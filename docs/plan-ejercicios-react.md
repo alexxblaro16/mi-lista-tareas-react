@@ -1091,9 +1091,10 @@ export function useDebounce(value, delay = 300) {
 #### Paso 5.2: Añadir búsqueda en la UI
 
 - En `App.jsx`: estado `searchTerm` y `debouncedSearch = useDebounce(searchTerm, 300)`.
-- Calcular `filteredTasks = tasks.filter(t => t.text.toLowerCase().includes(debouncedSearch.toLowerCase()))`.
-- Pasar `filteredTasks` a `<TaskList>` (no `tasks`).
-- Añadir un `<input>` controlado para `searchTerm` (placeholder "Buscar tareas...").
+- Calcular `filteredTasks` (o `visibleTasks`) con el filtro por `debouncedSearch` y pasar esa lista a `<TaskList>` (no `tasks`).
+- **Componente de búsqueda:** Crear `SearchTasksInput` en `src/components/SearchTasksInput.jsx`: input controlado que recibe `value` y `onChange` (el padre pasa `searchTerm` y `setSearchTerm`). Incluir placeholder "Buscar tareas..." y `aria-label` para accesibilidad.
+- En `App.jsx`: renderizar `<SearchTasksInput value={searchTerm} onChange={setSearchTerm} />` **solo cuando existan más de una tarea** (`tasks.length > 1`). Con cero o una tarea, filtrar no tiene sentido.
+- Nota pedagógica: igual que con "Ocultar completadas", la barra de búsqueda solo tiene sentido cuando hay varias tareas que filtrar; con una sola (o ninguna) no se muestra para evitar ruido visual y comunicar que la UI reacciona a los datos.
 
 ### ✅ Criterios de aceptación
 
@@ -1113,13 +1114,13 @@ REQUISITOS:
 1. Crear src/hooks/useDebounce.js con cleanup (clearTimeout en el return del useEffect)
 2. En App.jsx: estado searchTerm, debouncedSearch = useDebounce(searchTerm, 300)
 3. Filtrar tareas por debouncedSearch y pasar lista filtrada a TaskList
-4. Añadir input de búsqueda con placeholder "Buscar tareas..."
+4. Crear componente SearchTasksInput (value, onChange) y usarlo en App **solo si hay más de una tarea** (tasks.length > 1); con 0 o 1 no hace falta.
 
 LECCIÓN ASOCIADA:
 /Users/ruvebal/projects/ruvebal/scholar/udit/web-atelier-udit/web-foundations/docs/lessons/es/react/react-hooks/index.md
 
 ENTREGABLE:
-- Código del hook y cambios en App.jsx + UI de búsqueda
+- Código del hook useDebounce, componente SearchTasksInput y cambios en App.jsx
 - Reporte indicando la ruta del plan y evidencia del cleanup en useEffect
 ```
 
@@ -1151,7 +1152,8 @@ ENTREGABLE:
 - Crear `src/hooks/useToggle.js`: estado booleano + funciones `toggle`, `setTrue`, `setFalse`.
 - En `App.jsx`: `const [hideCompleted, toggleHideCompleted] = useToggle(false)`.
 - Filtrar (o ocultar visualmente) las tareas completadas cuando `hideCompleted === true`.
-- Añadir botón o checkbox "Ocultar completadas" que llame a `toggleHideCompleted`.
+- Añadir botón o checkbox "Ocultar completadas" que llame a `toggleHideCompleted` **solo cuando exista al menos una tarea completada** (`tasks.some(t => t.completed)`).
+- Nota pedagógica: este patrón introduce la idea de que **la UI debe reaccionar a los datos**. Si no hay tareas completadas, el toggle desaparece porque no tiene efecto; cuando aparecen completadas, la opción de ocultarlas se hace visible.
 
 ### ✅ Criterios de aceptación
 
@@ -1170,7 +1172,7 @@ TAREA: useRef para focus en el input de nueva tarea y useToggle para ocultar com
 REQUISITOS:
 1. useRef: después de añadir tarea, hacer focus en el input (inputRef.current?.focus())
 2. Crear useToggle(initial) → [value, toggle, setTrue, setFalse]
-3. Botón/checkbox "Ocultar completadas" que alterna visibilidad de tareas completadas
+3. Componente Botón/checkbox "Ocultar completadas" que alterna visibilidad de tareas completadas
 4. Aplicar filtro (no eliminar del estado) cuando hideCompleted es true
 
 LECCIÓN ASOCIADA:
@@ -1202,29 +1204,52 @@ ENTREGABLE:
 
 #### Paso 7.1: useMemo para lista visible
 
-- Si ya tienes `filteredTasks` (búsqueda) y/o orden por prioridad, calcular la lista final con `useMemo`:
+**Beneficio arquitectónico de useMemo frente a cálculo en cada render**
+
+- **Sin useMemo:** En cada render de `App` (p. ej. al cambiar `savedIndicator`, `searchTerm`, etc.) se vuelve a ejecutar el filtrado y orden. El resultado es correcto pero se recalcula siempre.
+- **Con useMemo:** La lista derivada solo se recalcula cuando cambian `tasks`, `hideCompleted` o `debouncedSearch`. Si el padre re-renderiza por otro motivo (otro estado), React reutiliza el valor memoizado y no vuelve a ejecutar el callback. Además, la **referencia** del array es estable mientras las dependencias no cambien, lo que ayuda si `TaskList` o sus hijos usaran `React.memo`.
+
+**¿Es lo mismo useCallback?** No. `useMemo` memoiza un **valor** (aquí, el array de tareas visibles). `useCallback` memoiza una **función** (p. ej. `onToggle`, `onRemove`). Se usa useCallback cuando pasas callbacks a hijos memoizados: si el callback cambiara en cada render, el hijo se re-renderizaría igual. En esta app, si los ítems no están envueltos en `React.memo`, useCallback no aporta beneficio.
+
+**¿Tiene sentido en esta app?** Con pocas tareas, filtrar y ordenar es barato; la ganancia de useMemo aquí es **pequeña**. Se introduce como patrón pedagógico: en listas largas o cálculos costosos, useMemo sí evita trabajo innecesario. Documentar en código por qué se usa ("lista derivada; evita recalcular en cada render cuando otras dependencias no han cambiado") evita optimización prematura sin contexto.
+
+- Si ya tienes filtros (búsqueda, ocultar completadas) y/o orden por prioridad, calcular la lista final con `useMemo`:
 
 ```jsx
+const priorityOrder = { alta: 0, media: 1, baja: 2 };
+
 const visibleTasks = useMemo(() => {
 	let list = tasks;
 	if (hideCompleted) list = list.filter((t) => !t.completed);
-	if (debouncedSearch) list = list.filter((t) => t.text.toLowerCase().includes(debouncedSearch.toLowerCase()));
+	if (debouncedSearch.trim()) {
+		const q = debouncedSearch.toLowerCase();
+		list = list.filter((t) => t.text.toLowerCase().includes(q));
+	}
 	return [...list].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 }, [tasks, hideCompleted, debouncedSearch]);
 ```
 
 - Pasar `visibleTasks` a `<TaskList>`.
 
-#### Paso 7.2: useCallback (opcional y con criterio)
+#### Paso 7.2: useCallback (pedagógico: enseñar el par React.memo + useCallback)
 
-- Si `TaskItem` está envuelto en `React.memo`, estabilizar `onToggle` y `onRemove` con `useCallback` para evitar que cada render de App cree nuevas funciones y fuerce re-render de todos los ítems.
-- Comentar en el código: "useCallback aquí porque TaskItem está memoizado y la lista puede ser larga".
+Vale la pena enseñar **useCallback** junto a **React.memo** para que el alumnado entienda el patrón completo: un hijo memoizado solo evita re-renders si las props no cambian; si el padre pasa funciones creadas en cada render (`onToggle`, `onRemove`), esas props son "nuevas" cada vez y el hijo se re-renderiza igual. useCallback devuelve la **misma referencia** de función mientras las dependencias no cambien.
+
+**Pasos recomendados:**
+
+1. **Envolver `TaskItem` en `React.memo`** (export default memo(TaskItem)). Sin esto, useCallback no tiene efecto visible: el hijo siempre re-renderiza.
+2. **Estabilizar los handlers en App con useCallback.** Para que la referencia sea estable, usar **actualizador funcional** en setState: `setTasks(prev => ...)` en lugar de `setTasks(tasks.filter(...))`. Así las dependencias de useCallback pueden ser `[]` y la función no cambia entre renders.
+3. **Comentar en código** por qué se usa: "useCallback aquí porque TaskItem está memoizado; referencia estable para no forzar re-render de todos los ítems cuando App actualiza por otro estado (p. ej. savedIndicator, searchTerm)".
+
+**Importante:** useCallback con `[]` no evita que **App** re-renderice (App sigue re-renderizándose cuando cambia tasks, searchTerm, savedIndicator, etc.). Lo que hace es devolver la **misma referencia** de función en cada render de App, de modo que los hijos memoizados (TaskItem) no vean un cambio en la prop y no se re-rendericen innecesariamente.
+
+**Resumen didáctico:** React.memo + useCallback (con actualizador funcional) = referencias estables de props → solo re-renderizan los ítems cuya tarea cambió. En esta app con pocas tareas el beneficio es pequeño; el objetivo es aprender el patrón para listas largas o componentes costosos.
 
 ### ✅ Criterios de aceptación
 
 - [ ] La lista visible se calcula con useMemo y dependencias correctas.
-- [ ] Si se usa useCallback, está justificado (p. ej. hijos memoizados).
-- [ ] No hay memoización sin motivo documentado.
+- [ ] TaskItem envuelto en React.memo; onToggle y onRemove definidos con useCallback y actualizador funcional en setTasks.
+- [ ] Comentarios en código que justifican React.memo y useCallback (evitar optimización prematura sin contexto).
 
 ### 📝 Prompt para implementación
 
@@ -1232,18 +1257,18 @@ const visibleTasks = useMemo(() => {
 Implementa la Fase 7 del plan ubicado en:
 /Users/ruvebal/projects/ruvebal/scholar/udit/courses-repos/react-template/docs/plan-ejercicios-react.md
 
-TAREA: Añadir useMemo para la lista visible de tareas y, si aplica, useCallback para handlers.
+TAREA: Añadir useMemo para la lista visible y useCallback para handlers (pedagógico: par React.memo + useCallback).
 
 REQUISITOS:
 1. useMemo para visibleTasks (filtros + orden) con dependencias [tasks, hideCompleted, debouncedSearch]
-2. Opcional: useCallback para onToggle y onRemove si TaskItem usa React.memo
-3. Comentar en código por qué se usa cada memoización (evitar optimización prematura)
+2. React.memo en TaskItem; useCallback para removeTask y toggleTask en App usando actualizador funcional (setTasks(prev => ...)) para dependencias [] y referencia estable
+3. Comentar en código por qué se usa cada memoización (useMemo, useCallback, React.memo)
 
 LECCIÓN ASOCIADA:
 /Users/ruvebal/projects/ruvebal/scholar/udit/web-atelier-udit/web-foundations/docs/lessons/es/react/react-hooks/index.md
 
 ENTREGABLE:
-- Cambios en App.jsx (useMemo y opcionalmente useCallback)
+- Cambios en App.jsx (useMemo, useCallback) y TaskItem.jsx (React.memo)
 - Reporte indicando la ruta del plan y la justificación de cada hook de optimización
 ```
 

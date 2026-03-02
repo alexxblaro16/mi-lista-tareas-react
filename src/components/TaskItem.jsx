@@ -1,3 +1,11 @@
+import { memo } from 'react';
+
+/**
+ * Un ítem de tarea. Envuelto en React.memo para que solo re-renderice cuando
+ * cambien task, onRemoveTask u onToggleTask. Así, useCallback en el padre
+ * (App) evita re-renders de todos los ítems cuando el padre actualiza por
+ * otro estado (p. ej. savedIndicator, searchTerm). Ver Fase 7 del plan.
+ */
 function TaskItem({ task, onRemoveTask, onToggleTask }) {
   // 🆕 Mapeo de prioridades a colores
   const priorityStyles = {
@@ -57,4 +65,4 @@ function TaskItem({ task, onRemoveTask, onToggleTask }) {
   );
 }
 
-export default TaskItem;
+export default memo(TaskItem);
