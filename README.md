@@ -1,16 +1,62 @@
-# React + Vite
+# 🚀 FOCUS. NÚCLEO CUÁNTICO
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**FOCUS** es una aplicación de gestión de misiones (Task Manager) de alto rendimiento construida con **React + Vite**. Diseñada con una estética futurista "Aero-3D", ofrece una experiencia de usuario inmersiva centrada en la productividad y la respuesta física en tiempo real.
 
-Currently, two official plugins are available:
+Desarrollado por **[Alexxblaro](https://github.com/alexxblaro16)**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 💎 Características Principales
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🧠 Núcleo de Ingeniería
+* **Memoria Persistente**: Implementación de `localStorage` de alta fidelidad. Las misiones se cifran y guardan localmente al instante, garantizando la persistencia de datos tras reinicios del sistema.
+* **Filtro de Ruido (Debounce)**: Motor de búsqueda optimizado que reduce la carga computacional, procesando el escaneo de la base de datos solo tras pausas en la entrada del usuario.
+* **Sincronización Validada**: Indicadores LED y barra de progreso líquida que notifican en tiempo real cada guardado exitoso y cambio en el estado del sistema.
 
-## Expanding the ESLint configuration
+### 🎨 Experiencia Visual (UX/UI)
+* **Interfaz Aero-3D**: Entorno inmersivo con física de inclinación adaptativa (Tilt). Los paneles táctiles reaccionan a la posición del puntero para generar profundidad real.
+* **Fondo Magnético**: Aura de neón dinámica que sigue el movimiento del ratón, mejorando la inmersión en el modo "Quantum Core".
+* **Modo Adaptativo Pro**: Sistema totalmente optimizado para temas Claro/Oscuro con efectos de glassmorphism y transiciones fluidas.
+* **Radar de Escaneo**: Animación de radar integrada para estados de base de datos vacía, buscando activamente nuevas directivas.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 🌍 Funcionalidades Operativas
+* **Sistema de Prioridades**: Clasificación de misiones por niveles (ALFA, BETA, GAMMA) con distintivos visuales de color neón.
+* **Multilenguaje Nativo**: Soporte completo para Español e Inglés con cambio de estado instantáneo.
+* **Simulación Cloud API**: Puente de conexión asíncrona simulada para validación de sincronización remota.
+
+---
+
+## 🛠️ Stack Tecnológico
+
+* **Framework**: [React.js](https://reactjs.org/)
+* **Herramienta de Construcción**: [Vite](https://vitejs.dev/)
+* **Animaciones**: [Framer Motion](https://www.framer.com/motion/)
+* **Estilos**: [Tailwind CSS](https://tailwindcss.com/)
+* **Iconos**: Lucid Icons / Tabler Icons
+
+---
+
+## 🚀 Instalación y Despliegue
+
+1.  **Clonar el repositorio**:
+    ```bash
+    git clone [https://github.com/alexxblaro16/focus-quantum-core.git](https://github.com/alexxblaro16/focus-quantum-core.git)
+    ```
+2.  **Instalar dependencias**:
+    ```bash
+    npm install
+    ```
+3.  **Ejecutar en entorno de desarrollo**:
+    ```bash
+    npm run dev
+    ```
+
+---
+
+## 👤 Autor
+
+Desarrollado con pasión por **Alexxblaro**.  
+¿Quieres ver más? Visita mi [GitHub](https://github.com/alexxblaro16).
+
+---
+*Este proyecto fue sometido a una purga total del sistema para alcanzar su estado de núcleo cuántico actual.*
