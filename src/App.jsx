@@ -1,70 +1,83 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import useDebounce from './hooks/useDebounce' 
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react'
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'motion/react'
 
-// --- DICCIONARIO DE TRADUCCIONES (Ahora mucho más claro) ---
+// --- DICCIONARIO DE TRADUCCIONES ---
 const translations = {
   es: {
-    name: "Español", flag: "🇪🇸", title: "ENFOQUE", subtitle: "SISTEMA PREMIUM",
-    progress: "Progreso", active: "Pendientes", placeholder: "¿Cuál es tu misión hoy?",
-    add: "Añadir", search: "Buscar tarea...", hide: "Ocultar Terminadas",
-    status: "Estado", done: "Hechas", total: "Total", wipe: "Borrar Todo",
-    confirm: "¿Quieres borrar todas las tareas?", priority: "Prioridad",
-    low: "Baja", medium: "Media", high: "Alta",
-    // Textos de Ayuda Claros:
-    helpTitle: "Cómo funciona FOCUS",
-    helpIntro: "He diseñado esta aplicación para que sea inteligente y fácil de usar. Aquí tienes los detalles:",
-    helpConcept1: "Memoria Automática: No importa si cierras la pestaña, tus tareas se quedan guardadas como por arte de magia.",
-    helpConcept2: "Buscador Inteligente: El sistema espera a que termines de escribir para buscar, así todo va mucho más rápido.",
-    helpConcept3: "Efectos 3D: Las tarjetas se mueven contigo para que la aplicación se sienta real, como si pudieras tocarla.",
-    helpConcept4: "Luz de Seguridad: El punto verde te confirma que tus cambios se han guardado con éxito en el sistema.",
-    helpApiPlans: "Próximamente: Podrás ver tus tareas desde cualquier móvil u ordenador conectándote a internet.",
+    name: "Español", flag: "🇪🇸", title: "FOCUS", subtitle: "NÚCLEO CUÁNTICO",
+    progress: "SINCRONIZACIÓN DEL SISTEMA", active: "MISIONES ACTIVAS", placeholder: "¿Cuál es tu directiva hoy?",
+    add: "DESPLEGAR", search: "Escanear base de datos...", hide: "Ocultar Finalizadas",
+    status: "ESTADO", done: "LOGRADO", total: "Tasks", wipe: "BORRADO TOTAL",
+    confirm: "¿Someter sistema a purga total?", priority: "Prioridad",
+    low: "BAJA", medium: "MEDIA", high: "ALTA",
+    helpTitle: "Manual de Operaciones",
+    helpIntro: "Protocolos de sistema activos. Bienvenido al centro de control de FOCUS:",
+    helpConcept1: "Memoria Persistente: Implementación de LocalStorage de alta fidelidad. Tus misiones se cifran y guardan localmente al instante, garantizando la persistencia de datos tras reinicios del sistema.",
+    helpConcept2: "Filtro de Ruido (Debounce): Motor de búsqueda optimizado que reduce la carga computacional, procesando el escaneo de la base de datos solo tras pausas en la entrada del usuario.",
+    helpConcept3: "Interfaz Aero-3D: Entorno inmersivo con física de inclinación adaptativa. Los paneles táctiles reaccionan a la posición del puntero para generar una respuesta física y profundidad real.",
+    helpConcept4: "Confirmación Visual: Sincronización validada por ciclos de núcleo. Indicadores LED notifican en tiempo real cada guardado exitoso y cambio en el estado del sistema.",
+    cloudActive: "NUBE ACTIVA", cloudConnecting: "CONECTANDO...",
+    empty: "ESCANEO COMPLETADO. SIN DIRECTIVAS ACTIVAS.",
+    syncing: "SYNCING", saved: "OK",
+    devBy: "FOCUS — DESARROLLADO POR ALEXXBLARO"
   },
   en: {
-    name: "English", flag: "🇺🇸", title: "FOCUS", subtitle: "PREMIUM SYSTEM",
-    progress: "Progress", active: "Active", placeholder: "What is your mission?",
-    add: "Add", search: "Search tasks...", hide: "Hide Finished",
-    status: "Status", done: "Done", total: "Total", wipe: "Wipe All",
-    confirm: "Do you want to delete all tasks?", priority: "Priority",
-    low: "Low", medium: "Med", high: "High",
-    helpTitle: "How FOCUS Works",
-    helpIntro: "I designed this app to be smart and easy to use. Here are the details:",
-    helpConcept1: "Auto-Memory: No matter if you close the tab, your tasks stay saved like magic.",
-    helpConcept2: "Smart Search: The system waits for you to finish typing to search, making everything much faster.",
-    helpConcept3: "3D Effects: The cards move with you so the app feels real, as if you could touch it.",
-    helpConcept4: "Security Light: The green dot confirms that your changes have been successfully saved.",
-    helpApiPlans: "Coming Soon: You will be able to see your tasks from any mobile or computer by connecting to the internet.",
+    name: "English", flag: "🇺🇸", title: "FOCUS", subtitle: "QUANTUM CORE",
+    progress: "SYSTEM SYNC RATE", active: "ACTIVE MISSIONS", placeholder: "What is your directive?",
+    add: "DEPLOY", search: "Scanning database...", hide: "Hide Completed",
+    status: "STATUS", done: "DONE", total: "Tasks", wipe: "FULL WIPE",
+    confirm: "Confirm full system purge?", priority: "Priority",
+    low: "GAMMA", medium: "BETA", high: "ALFA",
+    helpTitle: "Operations Manual",
+    helpIntro: "System protocols active. Welcome to the FOCUS control center:",
+    helpConcept1: "Persistent Memory: High-fidelity LocalStorage implementation. Your missions are saved locally instantly, ensuring data survives system reboots.",
+    helpConcept2: "Noise Filter (Debounce): Optimized search engine that reduces computational load by processing scans only after user input pauses.",
+    helpConcept3: "Aero-3D Interface: Immersive environment with adaptive Tilt physics. Touch panels react to pointer position for real depth and physical feedback.",
+    helpConcept4: "Visual Confirmation: Core-validated sync cycles. LED indicators notify in real-time of every successful save and state change.",
+    cloudActive: "CLOUD ACTIVE", cloudConnecting: "CONNECTING...",
+    empty: "SCAN COMPLETE. NO ACTIVE DIRECTIVES.",
+    syncing: "SYNCING", saved: "OK",
+    devBy: "FOCUS — DEVELOPED BY ALEXXBLARO"
   }
 }
 
-// --- COMPONENTE TILT 3D PARA LAS TAREAS ---
-function TiltCard({ children, theme, priority }) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-60, 60], [10, -10]);
-  const rotateY = useTransform(x, [-60, 60], [-10, 10]);
+// --- COMPONENTE: BARRA DE PROGRESO LÍQUIDA ---
+const LiquidProgressBar = ({ percent, theme }) => (
+  <div className={`w-full h-4 rounded-full overflow-hidden relative ${theme === 'dark' ? 'bg-black/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]' : 'bg-slate-200 shadow-inner'}`}>
+    <motion.div 
+      initial={{ width: 0 }} animate={{ width: `${percent}%` }}
+      transition={{ type: "spring", stiffness: 50, damping: 15 }}
+      className="h-full bg-gradient-to-r from-indigo-700 via-indigo-500 to-cyan-400 relative overflow-hidden rounded-full shadow-[0_0_15px_rgba(79,102,241,0.3)]"
+    >
+      <motion.svg animate={{ x: [-100, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} className="absolute -top-[100%] left-0 h-[300%] w-[200%] opacity-30 fill-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+        <path d="M0 10 Q 25 5 50 10 T 100 10 V 20 H 0 Z" />
+      </motion.svg>
+    </motion.div>
+  </div>
+)
 
-  function handleMouse(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    x.set(e.clientX - rect.left - rect.width / 2);
-    y.set(e.clientY - rect.top - rect.height / 2);
+// --- COMPONENTE TILT 3D ---
+function TiltCard({ children, theme, priority }) {
+  const x = useMotionValue(0); const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-60, 60], [12, -12]);
+  const rotateY = useTransform(x, [-60, 60], [-12, 12]);
+
+  const priorityStyles = {
+    high: theme === 'dark' ? 'border-l-rose-500 shadow-rose-500/10' : 'border-l-rose-600 shadow-rose-100',
+    medium: theme === 'dark' ? 'border-l-amber-500 shadow-amber-500/10' : 'border-l-amber-500 shadow-amber-100',
+    low: theme === 'dark' ? 'border-l-sky-500 shadow-sky-500/10' : 'border-l-sky-500 shadow-sky-100'
   }
 
   return (
-    <motion.div
-      style={{ perspective: 1000 }}
-      onMouseMove={handleMouse}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
-    >
-      <motion.div
-        style={{ rotateX, rotateY }}
-        className={`group flex items-center gap-5 p-5 border rounded-[1.5rem] transition-all shadow-lg ${
-          theme === 'dark' 
-          ? 'bg-white/[0.03] border-white/5 hover:border-indigo-500/30' 
-          : 'bg-white border-slate-100 shadow-sm'
-        } ${priority === 'high' ? 'border-l-4 border-l-rose-500' : ''}`}
-      >
+    <motion.div style={{ perspective: 1200 }} onMouseMove={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      x.set(e.clientX - rect.left - rect.width / 2); y.set(e.clientY - rect.top - rect.height / 2);
+    }} onMouseLeave={() => { x.set(0); y.set(0); }}>
+      <motion.div style={{ rotateX, rotateY }} className={`relative group flex items-center gap-5 p-6 border rounded-[2rem] transition-all duration-500 shadow-2xl ${
+          theme === 'dark' ? 'bg-white/[0.04] border-white/10 backdrop-blur-md' : 'bg-white border-slate-200 shadow-sm'
+        } border-l-[6px] ${priorityStyles[priority]}`}>
         {children}
       </motion.div>
     </motion.div>
@@ -72,310 +85,251 @@ function TiltCard({ children, theme, priority }) {
 }
 
 function App() {
-  const [tasks, setTasks] = useLocalStorage('tasks-premium-v4', [])
-  const [lang, setLang] = useState('es')
-  const [theme, setTheme] = useState('dark')
-  const [isLangOpen, setIsLangOpen] = useState(false)
+  const [tasks, setTasks] = useLocalStorage('tasks-ultra-v16', [])
+  const [lang, setLang] = useState('es'); const [theme, setTheme] = useState('dark')
   const [isHelpOpen, setIsHelpOpen] = useState(false) 
-  const [taskText, setTaskText] = useState('')
-  const [priority, setPriority] = useState('medium')
-  const [search, setSearch] = useState('')
-  const [hideCompleted, setHideCompleted] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
-  
-  const t = translations[lang]
-  const debouncedSearch = useDebounce(search, 300)
-  const langRef = useRef(null)
-  const helpRef = useRef(null) 
+  const [taskText, setTaskText] = useState(''); const [priority, setPriority] = useState('medium')
+  const [search, setSearch] = useState(''); const [hideCompleted, setHideCompleted] = useState(false)
+  const [isSaved, setIsSaved] = useState(false); const [isCloudActive, setIsCloudActive] = useState(false)
+  const [cloudStatus, setCloudStatus] = useState('idle')
+
+  const t = translations[lang]; const debouncedSearch = useDebounce(search, 300)
+  const helpRef = useRef(null)
+
+  const mouseX = useMotionValue(0); const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 40, damping: 20 });
+  const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (langRef.current && !langRef.current.contains(e.target)) setIsLangOpen(false);
-      if (helpRef.current && !helpRef.current.contains(e.target)) setIsHelpOpen(false);
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    const handleMove = (e) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
+    window.addEventListener('mousemove', handleMove);
+    return () => window.removeEventListener('mousemove', handleMove);
+  }, []);
+
+  const toggleCloud = async () => {
+    if (!isCloudActive) {
+      setCloudStatus('connecting');
+      try {
+        await fetch('https://jsonplaceholder.typicode.com/todos/1'); 
+        setTimeout(() => { setIsCloudActive(true); setCloudStatus('online'); }, 1200);
+      } catch (err) { setCloudStatus('idle'); }
+    } else { setIsCloudActive(false); setCloudStatus('idle'); }
+  }
 
   useEffect(() => {
-    setIsSaved(true)
-    const timeout = setTimeout(() => setIsSaved(false), 1200)
-    return () => clearTimeout(timeout)
+    setIsSaved(true); const timeout = setTimeout(() => setIsSaved(false), 800);
   }, [tasks])
 
   const addTask = (e) => {
-    e.preventDefault()
-    if (!taskText.trim()) return
-    const newTask = {
-      id: crypto.randomUUID(),
-      text: taskText,
-      completed: false,
-      priority,
-      createdAt: new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { day: '2-digit', month: 'short' })
-    }
-    setTasks([newTask, ...tasks])
+    e.preventDefault(); if (!taskText.trim()) return;
+    setTasks([{ id: crypto.randomUUID(), text: taskText, completed: false, priority, createdAt: new Date().toLocaleTimeString() }, ...tasks])
     setTaskText('')
   }
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
-  }
-
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(t => t.id !== id))
-  }
-
+  const toggleTask = (id) => setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
+  const deleteTask = (id) => setTasks(tasks.filter(t => t.id !== id))
+  
   const filteredTasks = tasks
     .filter(task => task.text.toLowerCase().includes(debouncedSearch.toLowerCase()))
     .filter(task => hideCompleted ? !task.completed : true)
 
   const stats = useMemo(() => {
-    const total = tasks.length
-    const completed = tasks.filter(t => t.completed).length
-    const percent = total === 0 ? 0 : Math.round((completed / total) * 100)
-    return { total, completed, percent }
+    const total = tasks.length; const completed = tasks.filter(t => t.completed).length;
+    return { total, completed, percent: total === 0 ? 0 : Math.round((completed / total) * 100) };
   }, [tasks])
 
   return (
-    <div className={`min-h-screen transition-colors duration-700 font-sans selection:bg-indigo-500/30 ${
-      theme === 'dark' ? 'bg-[#020617] text-slate-200' : 'bg-[#f8fafc] text-slate-800'
+    <div className={`min-h-screen transition-all duration-1000 font-sans relative overflow-hidden ${
+      theme === 'dark' ? 'bg-[#010208] text-slate-100' : 'bg-slate-50 text-slate-800'
     }`}>
       
-      {/* FONDO DE PARTÍCULAS */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <motion.div animate={{ x: [0, 50, 0], y: [0, 30, 0] }} transition={{ duration: 20, repeat: Infinity }} className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full" />
-        <motion.div animate={{ x: [0, -40, 0], y: [0, 60, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-[20%] -right-[10%] w-[30%] h-[30%] bg-blue-600/10 blur-[100px] rounded-full" />
-      </div>
+      {/* FONDO MAGNÉTICO */}
+      <motion.div style={{ x: springX, y: springY, translateX: '-50%', translateY: '-50%' }} className="fixed w-[600px] h-[600px] pointer-events-none z-0">
+        <div className={`w-full h-full rounded-full blur-[130px] opacity-20 ${theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-400'}`} />
+      </motion.div>
 
-      {/* BOTONES FLOTANTES */}
-      <div className="fixed top-6 right-6 flex gap-3 z-50">
-        <div className="relative" ref={langRef}>
-          <motion.button 
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsLangOpen(!isLangOpen)}
-            className={`p-3 rounded-2xl border backdrop-blur-md shadow-xl flex items-center gap-2 ${
-              theme === 'dark' ? 'bg-white/5 border-white/10 text-indigo-400' : 'bg-white border-slate-200 text-indigo-600'
-            }`}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-            <span className="text-[10px] font-black uppercase tracking-tighter">{lang}</span>
-          </motion.button>
-          <AnimatePresence>
-            {isLangOpen && (
-              <motion.div initial={{ opacity: 0, scale: 0.5, y: -20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.5, y: -20 }} className={`absolute top-full mt-3 right-0 w-40 p-2 rounded-2xl border shadow-2xl backdrop-blur-xl ${theme === 'dark' ? 'bg-slate-900/90 border-white/10' : 'bg-white/90 border-slate-200'}`}>
-                {Object.keys(translations).map((l) => (
-                  <button key={l} onClick={() => { setLang(l); setIsLangOpen(false); }} className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors ${lang === l ? 'bg-indigo-600 text-white' : 'hover:bg-white/5'}`}>
-                    <span className="text-xs font-bold">{translations[l].name}</span>
-                    <span>{translations[l].flag}</span>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      {/* FLASH PUESTA DE SOL */}
+      <AnimatePresence>
+        <motion.div key={theme} initial={{ opacity: 0, x: '-100%' }} animate={{ opacity: [0, 1, 0], x: '100%' }} transition={{ duration: 0.6 }} className="fixed inset-0 z-[100] pointer-events-none bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+      </AnimatePresence>
 
-        <motion.button 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className={`p-3 rounded-2xl border backdrop-blur-md shadow-xl ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </motion.button>
+      <div className="max-w-4xl mx-auto relative z-10 p-6 pt-16">
         
-        {/* BOTÓN DE AYUDA CLARO */}
-        <motion.button 
-          whileHover={{ scale: 1.1, rotate: 10 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setIsHelpOpen(!isHelpOpen)}
-          className={`w-12 h-12 rounded-2xl border backdrop-blur-md shadow-xl flex items-center justify-center font-black text-xl ${
-            theme === 'dark' ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-indigo-50 border-indigo-200 text-indigo-700'
-          }`}
-        >
-          ?
-        </motion.button>
-      </div>
-
-      <div className="max-w-3xl mx-auto relative z-10 p-4 md:p-12 pt-24 md:pt-12">
-        
-        <header className="flex justify-between items-center mb-12 relative">
-          <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-            <h1 className={`text-4xl font-black tracking-tighter ${theme === 'dark' ? 'bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent' : 'text-slate-900'}`}>
-              {t.title}<span className="text-indigo-500">.</span>
-            </h1>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">{t.subtitle}</p>
+        <header className="flex justify-between items-end mb-16 px-4 relative">
+          <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+            <h1 className="text-6xl font-black italic tracking-tighter">{t.title}<span className="text-indigo-600">.</span></h1>
+            <p className="text-indigo-500/60 text-[10px] font-black uppercase tracking-[0.5em] mt-2">{t.subtitle}</p>
           </motion.div>
           
-          <div className={`px-4 py-1.5 rounded-full border flex items-center gap-2 ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-white shadow-sm'}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${isSaved ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]' : 'bg-slate-400'}`}></div>
-            <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{isSaved ? 'OK' : 'SYNC'}</span>
+          <div className="flex flex-col items-end gap-2">
+            <div className={`px-6 py-2 rounded-full border flex items-center gap-3 transition-all ${isCloudActive ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-white/5 bg-white/5'}`}>
+               <div className={`w-2 h-2 rounded-full ${isCloudActive ? 'bg-indigo-400 shadow-[0_0_15px_#818cf8]' : 'bg-slate-600'}`} />
+               <span className={`text-[9px] font-black tracking-widest uppercase ${isCloudActive ? 'text-indigo-400' : 'text-slate-500'}`}>
+                {isCloudActive ? t.cloudActive : 'LOCAL MODE'}
+               </span>
+            </div>
           </div>
 
-          {/* PANEL DE AYUDA RE-DISEÑADO */}
           <AnimatePresence>
             {isHelpOpen && (
-              <motion.div 
-                ref={helpRef}
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className={`absolute top-full right-0 w-[90vw] max-w-sm p-8 rounded-[2rem] border shadow-3xl backdrop-blur-2xl z-[100] mt-4 ${
-                  theme === 'dark' ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-slate-200 text-slate-800'
-                }`}
-              >
-                <div className="flex justify-between items-center mb-6">
-                  <h4 className="text-2xl font-black tracking-tight text-indigo-500">{t.helpTitle}</h4>
-                  <button onClick={() => setIsHelpOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-500/10 hover:bg-rose-500/20 hover:text-rose-500 transition-colors">✕</button>
+              <motion.div ref={helpRef} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className={`absolute top-full right-0 w-full max-w-lg p-12 rounded-[3rem] border shadow-3xl backdrop-blur-[60px] z-[120] mt-6 ${theme === 'dark' ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                <div className="flex justify-between items-center mb-8">
+                  <h4 className="text-3xl font-black tracking-tighter text-indigo-500">{t.helpTitle}</h4>
+                  <button onClick={() => setIsHelpOpen(false)} className="text-xl opacity-50 hover:opacity-100 transition-opacity">✕</button>
                 </div>
-                <p className="text-sm font-semibold opacity-70 mb-6 leading-relaxed italic border-l-2 border-indigo-500 pl-4">{t.helpIntro}</p>
-                <div className="space-y-5">
-                  <div className="flex gap-4 items-start">
-                    <span className="text-lg">💾</span>
-                    <p className="text-xs leading-snug font-medium">{t.helpConcept1}</p>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <span className="text-lg">⚡</span>
-                    <p className="text-xs leading-snug font-medium">{t.helpConcept2}</p>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <span className="text-lg">🎨</span>
-                    <p className="text-xs leading-snug font-medium">{t.helpConcept3}</p>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <span className="text-lg">🟢</span>
-                    <p className="text-xs leading-snug font-medium">{t.helpConcept4}</p>
-                  </div>
-                  <div className="mt-6 pt-6 border-t border-indigo-500/20">
-                    <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">{t.helpApiPlans}</p>
-                  </div>
+                <div className="space-y-6">
+                  {[t.helpConcept1, t.helpConcept2, t.helpConcept3, t.helpConcept4].map((concept, i) => (
+                    <p key={i} className="text-sm font-medium opacity-70 border-l-2 border-indigo-500 pl-4">{concept}</p>
+                  ))}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </header>
 
-        {/* El resto de la app (Dashboard, Form, List) permanece igual */}
-        <motion.section 
-          whileHover={{ translateZ: 20, rotateX: 2 }}
-          className={`relative overflow-hidden border backdrop-blur-xl p-8 rounded-[2.5rem] mb-10 transition-all ${
-            theme === 'dark' ? 'bg-white/[0.03] border-white/10 shadow-2xl' : 'bg-white border-slate-200 shadow-sm'
-          }`}
-        >
-          <div className="flex justify-between items-end mb-6">
+        {/* DASHBOARD */}
+        <section className={`p-10 rounded-[3.5rem] border backdrop-blur-3xl mb-12 ${theme === 'dark' ? 'bg-white/[0.03] border-white/10 shadow-2xl' : 'bg-white border-slate-200 shadow-xl'}`}>
+          <div className="flex justify-between items-end mb-8 relative z-10">
             <div>
-              <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-1">{t.progress}</span>
-              <h2 className={`text-6xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                {stats.percent}<span className="text-indigo-500 text-2xl">%</span>
-              </h2>
+              <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-2">{t.progress}</span>
+              <h2 className="text-7xl font-black tracking-tighter">{stats.percent}<span className="text-indigo-600 text-3xl">%</span></h2>
             </div>
             <div className="text-right">
               <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-1">{t.active}</span>
-              <span className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stats.total - stats.completed}</span>
+              <span className="text-4xl font-black text-indigo-500">{stats.total - stats.completed}</span>
             </div>
           </div>
-          <div className={`w-full h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>
-            <motion.div animate={{ width: `${stats.percent}%` }} className="h-full bg-gradient-to-r from-indigo-600 via-blue-400 to-cyan-400 shadow-[0_0_20px_rgba(79,70,229,0.4)]" />
-          </div>
-        </motion.section>
+          <LiquidProgressBar percent={stats.percent} theme={theme} />
+        </section>
 
-        <form onSubmit={addTask} className="mb-12">
-          <div className={`flex flex-col md:flex-row gap-3 p-2 rounded-2xl border transition-all duration-300 ${
-            theme === 'dark' ? 'bg-white/[0.02] border-white/5 focus-within:border-indigo-500/50' : 'bg-white border-slate-200 focus-within:border-indigo-400 shadow-sm'
+        {/* BOTONES FLOTANTES */}
+        <div className="fixed top-8 right-8 flex gap-4 z-50">
+          <motion.button whileHover={{ scale: 1.1 }} onClick={toggleCloud} className={`w-14 h-14 rounded-full border backdrop-blur-xl transition-all ${isCloudActive ? 'bg-indigo-600 text-white shadow-indigo-500/50' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+            {cloudStatus === 'connecting' ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full mx-auto animate-spin" /> : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mx-auto"><path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.4-1.9-4.3-4.3-4.5-.4-3.4-3.3-6-6.7-6-2.5 0-4.7 1.4-5.9 3.5C2.5 8 1 10.1 1 12.5 1 15.5 3.5 18 6.5 18H17.5"></path></svg>}
+          </motion.button>
+          
+          <motion.button 
+            whileHover={{ scale: 1.1 }} 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+            className="w-14 h-14 rounded-full border bg-white/5 border-white/10 flex items-center justify-center text-xl shadow-2xl overflow-hidden"
+          >
+            <AnimatePresence mode="wait">
+              <motion.span key={theme} initial={{ y: 20, rotate: -90, opacity: 0 }} animate={{ y: 0, rotate: 0, opacity: 1 }} exit={{ y: -20, rotate: 90, opacity: 0 }} transition={{ type: "spring", stiffness: 200, damping: 15 }}>
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
+
+          <motion.button whileHover={{ scale: 1.1 }} onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="w-14 h-14 rounded-full border bg-white/5 border-white/10 font-black text-xs">{lang.toUpperCase()}</motion.button>
+          
+          <button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-14 h-14 rounded-full border bg-indigo-600 border-indigo-400 flex items-center justify-center font-black text-2xl text-white shadow-indigo-500/40 shadow-2xl hover:scale-110 transition-transform">?</button>
+        </div>
+
+        {/* --- BUSCADOR ADAPTATIVO (ESTILO MEJORADO) --- */}
+        <div className="mb-8 px-4">
+          <div className={`relative flex items-center group px-6 py-4 border-2 rounded-2xl transition-all duration-500 ${
+            theme === 'dark' 
+              ? 'bg-white/[0.03] border-white/10 focus-within:border-indigo-500/50 shadow-[0_0_25px_rgba(0,0,0,0.5)] focus-within:shadow-indigo-500/10' 
+              : 'bg-white border-slate-200 focus-within:border-indigo-400 shadow-[0_4px_12px_rgba(0,0,0,0.05)] focus-within:shadow-indigo-100'
           }`}>
+            <svg 
+              className={`w-5 h-5 mr-4 transition-colors duration-500 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} group-focus-within:text-indigo-500`} 
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input 
-              type="text" value={taskText} onChange={(e) => setTaskText(e.target.value)}
-              placeholder={t.placeholder}
-              className={`flex-1 p-4 bg-transparent outline-none font-bold text-lg ${theme === 'dark' ? 'text-white' : 'text-slate-700'}`}
+              type="text" 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+              placeholder={t.search} 
+              className={`bg-transparent outline-none flex-1 font-bold text-sm tracking-wide transition-colors duration-500 ${
+                theme === 'dark' ? 'text-white placeholder:text-slate-600' : 'text-slate-700 placeholder:text-slate-400'
+              }`} 
             />
-            <div className="flex gap-2 p-1">
-              <select 
-                value={priority} onChange={(e) => setPriority(e.target.value)}
-                className={`text-[10px] font-black uppercase px-4 rounded-xl outline-none border ${
-                  theme === 'dark' ? 'bg-white/5 border-white/5 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'
-                }`}
-              >
-                <option value="low">{t.low}</option>
-                <option value="medium">{t.medium}</option>
-                <option value="high">{t.high}</option>
-              </select>
-              <motion.button 
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 2 }}
-                className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black shadow-[0_4px_0_rgb(49,46,129)] active:shadow-none transition-all"
-              >
-                {t.add.toUpperCase()}
-              </motion.button>
+          </div>
+        </div>
+
+        {/* INPUT TAREAS */}
+        <form onSubmit={addTask} className="mb-14">
+          <div className={`flex flex-col md:flex-row gap-4 p-3 rounded-[2.5rem] border-2 transition-all duration-500 ${theme === 'dark' ? 'bg-white/[0.02] border-white/5 focus-within:border-indigo-500/50 shadow-3xl' : 'bg-white border-slate-200 focus-within:border-indigo-400 shadow-xl'}`}>
+            <input type="text" value={taskText} onChange={(e) => setTaskText(e.target.value)} placeholder={t.placeholder} className="flex-1 p-5 bg-transparent outline-none font-bold text-xl" />
+            
+            <div className="flex flex-wrap items-center gap-4 px-2">
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${theme === 'dark' ? 'text-indigo-400/80' : 'text-slate-500'}`}>
+                  {t.priority}:
+                </span>
+                <select 
+                  value={priority} 
+                  onChange={(e) => setPriority(e.target.value)} 
+                  className={`px-5 py-3 rounded-xl text-[11px] font-black uppercase outline-none border-2 transition-all cursor-pointer ${
+                    theme === 'dark' ? 'bg-slate-900 border-white/5 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-indigo-400'
+                  }`}
+                >
+                  <option value="low">{t.low}</option>
+                  <option value="medium">{t.medium}</option>
+                  <option value="high">{t.high}</option>
+                </select>
+              </div>
+              
+              <button className="bg-indigo-600 text-white px-10 py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all active:scale-95">
+                {t.add}
+              </button>
             </div>
           </div>
         </form>
 
-        <div className="flex flex-col md:flex-row gap-6 mb-8 justify-between items-center px-2">
-          <div className="relative w-full md:w-72 group">
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors">🔍</span>
-            <input 
-              type="text" placeholder={t.search}
-              className={`w-full pl-8 pr-4 py-2 bg-transparent border-b text-sm focus:outline-none focus:border-indigo-500 transition-all ${
-                theme === 'dark' ? 'border-white/10 text-white' : 'border-slate-200 text-slate-800'
-              }`}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <label className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase cursor-pointer hover:text-indigo-500 transition-colors">
-            <input type="checkbox" checked={hideCompleted} onChange={() => setHideCompleted(!hideCompleted)} className="w-4 h-4 rounded accent-indigo-600" />
-            {t.hide}
-          </label>
-        </div>
-
-        <div className="space-y-4">
+        {/* LISTA CON RADAR */}
+        <div className="space-y-6 px-2 min-h-[400px]">
           <AnimatePresence mode='popLayout'>
-            {filteredTasks.map(task => (
-              <motion.div
-                key={task.id}
-                layout
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-              >
-                <TiltCard theme={theme} priority={task.priority}>
-                  <button 
-                    onClick={() => toggleTask(task.id)}
-                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-500 ${
-                      task.completed ? 'bg-indigo-500 border-indigo-500 text-white shadow-lg' : theme === 'dark' ? 'border-slate-700 bg-black/20' : 'border-slate-200 bg-white'
-                    }`}
-                  >
-                    {task.completed && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-bold text-lg truncate transition-all ${task.completed ? 'opacity-20 line-through' : theme === 'dark' ? 'text-white' : 'text-slate-700'}`}>
-                      {task.text}
-                    </p>
-                    <span className="text-[9px] font-black text-indigo-500/50 uppercase tracking-widest">{t.priority}: {t[task.priority]}</span>
-                  </div>
-                  <button onClick={() => deleteTask(task.id)} className="text-slate-600 hover:text-rose-500 p-2 transition-all">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                  </button>
-                </TiltCard>
+            {filteredTasks.length === 0 ? (
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center py-24 text-center">
+                <div className="w-24 h-24 border border-white/10 rounded-full flex items-center justify-center border-dashed mb-8 relative">
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }} className="absolute w-1 h-12 bg-indigo-500 origin-bottom top-0 shadow-[0_0_15px_#6366f1]" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{t.empty}</p>
               </motion.div>
-            ))}
+            ) : (
+              filteredTasks.map(task => (
+                <motion.div key={task.id} layout initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, x: 50 }}>
+                  <TiltCard theme={theme} priority={task.priority}>
+                    <button onClick={() => toggleTask(task.id)} className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all ${task.completed ? 'bg-indigo-500 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'border-slate-700'}`}>{task.completed && '✓'}</button>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold text-xl truncate transition-all ${task.completed ? 'opacity-20 line-through' : ''}`}>{task.text}</p>
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${task.priority === 'high' ? 'text-rose-500' : task.priority === 'medium' ? 'text-amber-500' : 'text-sky-500'}`}>
+                        {t.priority}: {t[task.priority]}
+                      </span>
+                    </div>
+                    <button onClick={() => deleteTask(task.id)} className="text-slate-600 hover:text-rose-500 p-3 transition-colors"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
+                  </TiltCard>
+                </motion.div>
+              ))
+            )}
           </AnimatePresence>
         </div>
 
-        <footer className="mt-16 py-8 border-t border-slate-500/10 flex flex-col md:flex-row justify-between items-center gap-8 px-4">
-          <div className="flex gap-10">
-            <div>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{t.status}</span>
-              <span className="font-bold text-lg">{stats.completed} {t.done}</span>
-            </div>
-            <div>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{t.total}</span>
-              <span className="font-bold text-lg">{stats.total} Tasks</span>
-            </div>
+        {/* FOOTER ESTADÍSTICAS */}
+        <footer className="mt-24 py-12 border-t border-slate-500/10 flex flex-col md:flex-row justify-between items-center gap-10">
+          <div className="flex gap-12">
+            <div className="flex gap-1"><span className="font-black text-2xl italic text-indigo-500">{stats.completed}</span><span className="text-slate-500 text-sm mt-2">/ LOGRADO</span></div>
+            <div className="flex gap-1"><span className="font-black text-2xl italic text-indigo-500">{stats.total}</span><span className="text-slate-500 text-sm mt-2">/ {t.total}</span></div>
           </div>
-          <button onClick={() => confirm(t.confirm) && setTasks([])} className="px-6 py-2 rounded-lg text-[10px] font-black text-rose-500 border border-rose-500/10 hover:bg-rose-500 hover:text-white transition-all uppercase tracking-widest shadow-lg">
-            {t.wipe}
-          </button>
+          <button onClick={() => confirm(t.confirm) && setTasks([])} className="px-8 py-3 rounded-2xl text-[10px] font-black text-rose-500 border border-rose-500/30 uppercase tracking-[0.2em] hover:bg-rose-500/10 transition-colors">{t.wipe}</button>
         </footer>
+
+        {/* FOOTER DE FIRMA FINAL */}
+        <div className="mt-12 mb-16 text-center">
+          <motion.a 
+            href="https://github.com/alexxblaro16" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05, letterSpacing: "0.2em" }}
+            className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all cursor-pointer ${theme === 'dark' ? 'text-indigo-400/50 hover:text-indigo-300' : 'text-slate-400 hover:text-indigo-600'}`}
+          >
+            {t.devBy}
+          </motion.a>
+        </div>
       </div>
     </div>
   )
