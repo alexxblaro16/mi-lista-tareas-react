@@ -38,10 +38,10 @@ Desarrollado por **[Alexxblaro](https://github.com/alexxblaro16)**.
 
 ## 🚀 Instalación y Despliegue
 
-1.  **Clonar el repositorio**:
-    ```bash
-    git clone [https://github.com/alexxblaro16/focus-quantum-core.git](https://github.com/alexxblaro16/focus-quantum-core.git)
-    ```
+1. **Clonar el repositorio**:
+   ```bash
+   git clone [https://github.com/alexxblaro16/mi-lista-tareas-react.git](https://github.com/alexxblaro16/mi-lista-tareas-react.git)
+   ```
 2.  **Instalar dependencias**:
     ```bash
     npm install
