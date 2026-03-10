@@ -225,7 +225,7 @@ function App() {
           <button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-14 h-14 rounded-full border bg-indigo-600 border-indigo-400 flex items-center justify-center font-black text-2xl text-white shadow-indigo-500/40 shadow-2xl hover:scale-110 transition-transform">?</button>
         </div>
 
-        {/* --- BUSCADOR ADAPTATIVO (ESTILO MEJORADO) --- */}
+        {/* --- BUSCADOR ADAPTATIVO--- */}
         <div className="mb-8 px-4">
           <div className={`relative flex items-center group px-6 py-4 border-2 rounded-2xl transition-all duration-500 ${
             theme === 'dark' 
