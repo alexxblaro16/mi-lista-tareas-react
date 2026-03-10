@@ -29,7 +29,7 @@ const translations = {
     add: "DEPLOY", search: "Scanning database...", hide: "Hide Completed",
     status: "STATUS", done: "DONE", total: "Tasks", wipe: "FULL WIPE",
     confirm: "Confirm full system purge?", priority: "Priority",
-    low: "GAMMA", medium: "BETA", high: "ALFA",
+    low: "LOW", medium: "MEDIUM", high: "HIGH",
     helpTitle: "Operations Manual",
     helpIntro: "System protocols active. Welcome to the FOCUS control center:",
     helpConcept1: "Persistent Memory: High-fidelity LocalStorage implementation. Your missions are saved locally instantly, ensuring data survives system reboots.",
