@@ -21,7 +21,8 @@ const translations = {
     cloudActive: "NUBE ACTIVA", cloudConnecting: "CONECTANDO...",
     empty: "ESCANEO COMPLETADO. SIN MISIONES ACTIVAS.",
     syncing: "SYNCING", saved: "OK",
-    devBy: "FOCUS — DESARROLLADO POR ALEXXBLARO"
+    devBy: "FOCUS — DESARROLLADO POR ALEXXBLARO",
+    filterActive: "FILTRO: PENDIENTES", filterAll: "FILTRO: TODAS"
   },
   en: {
     name: "English", flag: "🇺🇸", title: "FOCUS", subtitle: "QUANTUM CORE",
@@ -39,7 +40,8 @@ const translations = {
     cloudActive: "CLOUD ACTIVE", cloudConnecting: "CONNECTING...",
     empty: "SCAN COMPLETE. NO ACTIVE DIRECTIVES.",
     syncing: "SYNCING", saved: "OK",
-    devBy: "FOCUS — DEVELOPED BY ALEXXBLARO"
+    devBy: "FOCUS — DEVELOPED BY ALEXXBLARO",
+    filterActive: "FILTER: PENDING", filterAll: "FILTER: ALL"
   }
 }
 
@@ -129,6 +131,7 @@ function App() {
   const toggleTask = (id) => setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
   const deleteTask = (id) => setTasks(tasks.filter(t => t.id !== id))
   
+  // --- LÓGICA DE FILTRADO COMBINADA ---
   const filteredTasks = tasks
     .filter(task => task.text.toLowerCase().includes(debouncedSearch.toLowerCase()))
     .filter(task => hideCompleted ? !task.completed : true)
@@ -225,7 +228,7 @@ function App() {
           <button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-14 h-14 rounded-full border bg-indigo-600 border-indigo-400 flex items-center justify-center font-black text-2xl text-white shadow-indigo-500/40 shadow-2xl hover:scale-110 transition-transform">?</button>
         </div>
 
-        {/* --- BUSCADOR ADAPTATIVO--- */}
+        {/* --- BUSCADOR ADAPTATIVO CON FILTRO DE COMPLETADAS --- */}
         <div className="mb-8 px-4">
           <div className={`relative flex items-center group px-6 py-4 border-2 rounded-2xl transition-all duration-500 ${
             theme === 'dark' 
@@ -247,6 +250,31 @@ function App() {
                 theme === 'dark' ? 'text-white placeholder:text-slate-600' : 'text-slate-700 placeholder:text-slate-400'
               }`} 
             />
+
+            {/* BOTÓN FILTRO (OJITO) */}
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setHideCompleted(!hideCompleted)}
+              className={`ml-4 p-2 rounded-lg border transition-all flex items-center gap-2 ${
+                hideCompleted 
+                  ? 'bg-indigo-600 border-indigo-400 text-white' 
+                  : 'bg-transparent border-white/10 text-slate-500 hover:text-indigo-500'
+              }`}
+            >
+              <span className="text-[9px] font-black uppercase hidden md:inline">
+                {hideCompleted ? t.filterActive : t.filterAll}
+              </span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                {hideCompleted ? (
+                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24L1 1l22 22" />
+                ) : (
+                   <>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                   </>
+                )}
+              </svg>
+            </motion.button>
           </div>
         </div>
 
