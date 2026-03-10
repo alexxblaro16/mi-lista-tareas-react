@@ -7,7 +7,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from
 const translations = {
   es: {
     name: "Español", flag: "🇪🇸", title: "FOCUS", subtitle: "NÚCLEO CUÁNTICO",
-    progress: "SINCRONIZACIÓN DEL SISTEMA", active: "MISIONES ACTIVAS", placeholder: "¿Cuál es tu directiva hoy?",
+    progress: "SINCRONIZACIÓN DEL SISTEMA", active: "MISIONES ACTIVAS", placeholder: "¿Cuál es tu misión hoy?",
     add: "DESPLEGAR", search: "Escanear base de datos...", hide: "Ocultar Finalizadas",
     status: "ESTADO", done: "LOGRADO", total: "Tasks", wipe: "BORRADO TOTAL",
     confirm: "¿Someter sistema a purga total?", priority: "Prioridad",
@@ -19,7 +19,7 @@ const translations = {
     helpConcept3: "Interfaz Aero-3D: Entorno inmersivo con física de inclinación adaptativa. Los paneles táctiles reaccionan a la posición del puntero para generar una respuesta física y profundidad real.",
     helpConcept4: "Confirmación Visual: Sincronización validada por ciclos de núcleo. Indicadores LED notifican en tiempo real cada guardado exitoso y cambio en el estado del sistema.",
     cloudActive: "NUBE ACTIVA", cloudConnecting: "CONECTANDO...",
-    empty: "ESCANEO COMPLETADO. SIN DIRECTIVAS ACTIVAS.",
+    empty: "ESCANEO COMPLETADO. SIN MISIONES ACTIVAS.",
     syncing: "SYNCING", saved: "OK",
     devBy: "FOCUS — DESARROLLADO POR ALEXXBLARO"
   },
