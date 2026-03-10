@@ -53,8 +53,7 @@ Desarrollado por **[Alexxblaro](https://github.com/alexxblaro16)**.
 
 ---
 # 🚀 FOCUS. NÚCLEO CUÁNTICO
-**URL de despliegue:** [https://tu-proyecto.vercel.app]([https://tu-proyecto.vercel.app](https://mi-lista-tareas-react.vercel.app/))
-
+**URL de despliegue:** https://mi-lista-tareas-react.vercel.app/
 **FOCUS** es una aplicación de gestión de misiones...
 
 ## 👤 Autor
